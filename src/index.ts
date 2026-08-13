@@ -3,14 +3,15 @@
  *
  * ```ts
  * const mv = createMilesverse({ baseUrl: 'http://localhost:8100' });
- * await mv.auth.login('user@example.com', 'password');     // or mv.setToken(ssoToken)
+ * await mv.auth.ssoToken(providerToken, orgId, applicationId); // or mv.setToken(token)
  * const { data: sims } = await mv.catalog.simulations({ search: 'audit' });
  * const detail = await mv.catalog.simulation(sims[0].id);
  * const started = await mv.sessions.start(sims[0].id);     // started.session_token -> Anam
  * ```
  *
- * Auth is a bearer token the caller supplies (SSO token) or obtains via
- * `auth.login` / `auth.ssoToken`; it is then sent on every request.
+ * Auth is a bearer token: a provider-signed SSO token exchanged via
+ * `auth.ssoToken` (or supplied directly via `setToken`); it is then sent on
+ * every request.
  */
 
 import { HttpClient } from './core/http';

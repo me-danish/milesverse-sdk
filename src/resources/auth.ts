@@ -1,4 +1,8 @@
-/** Authentication: password login, SSO provisioning, refresh, current user. */
+/** Authentication: SSO provisioning, refresh, current user.
+
+    Password login (`/auth/token`) is deliberately absent: it is for system
+    users (operators/admin tooling), never for the end-user surfaces this SDK
+    serves. End users authenticate exclusively through `ssoToken`. */
 
 import type { HttpClient } from '../core/http';
 import type { TokenPair, User } from '../types';
@@ -9,25 +13,20 @@ export class AuthResource {
     private readonly setToken: (token: string | null) => void,
   ) {}
 
-  /** System users: email + password -> access/refresh pair (sets the bearer). */
-  async login(email: string, password: string): Promise<TokenPair> {
-    const pair = await this.http.request<TokenPair>('/api/v1/auth/token', {
-      method: 'POST',
-      form: { username: email, password },
-      auth: false,
-    });
-    this.setToken(pair.access_token);
-    return pair;
-  }
-
   /**
    * End users: provision/recognise via a provider SSO token, then use the SSO
    * token itself as the bearer (mmc-develop issues no tokens for SSO logins).
+   * ``applicationId`` is the application the login came through; a new user is
+   * granted exactly that one membership.
    */
-  async ssoToken(ssoToken: string, orgId: string, applicationIds: string[] = []): Promise<User> {
+  async ssoToken(ssoToken: string, orgId: string, applicationId?: string): Promise<User> {
     const res = await this.http.request<{ data: User }>('/api/v1/auth/sso/token', {
       method: 'POST',
-      body: { sso_token: ssoToken, org_id: orgId, application_ids: applicationIds },
+      body: {
+        sso_token: ssoToken,
+        org_id: orgId,
+        ...(applicationId ? { application_id: applicationId } : {}),
+      },
       auth: false,
     });
     this.setToken(ssoToken);
